@@ -5,9 +5,11 @@ import argparse
 import datetime
 import json
 import os
+import queue
 import sqlite3
 import sys
 import tempfile
+import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -647,6 +649,38 @@ class EntityView(ttk.Frame):
             if self.on_select:
                 self.on_select(None)
             self.app.status("Deleted")
+
+
+class Worker:
+    """Run a job on a thread. The job calls post(fn, *args) to run fn on the GUI thread, because Tk may only be
+    touched from there. Results travel through a queue that the GUI polls."""
+
+    def __init__(self, widget, job, *args):
+        self.widget, self.q = widget, queue.Queue()
+        self.thread = threading.Thread(target=self._go, args=(job, args), daemon=True)
+        self.thread.start()
+        self._pump()
+
+    def _go(self, job, args):
+        try:
+            job(self.post, *args)
+        finally:
+            self.q.put(None)
+
+    def post(self, fn, *args):
+        self.q.put((fn, args))
+
+    def _pump(self):
+        try:
+            while True:
+                item = self.q.get_nowait()
+                if item is None:
+                    return
+                item[0](*item[1])
+        except queue.Empty:
+            pass
+        if self.widget.winfo_exists():
+            self.widget.after(40, self._pump)
 
 
 class Tile(ttk.Frame):
