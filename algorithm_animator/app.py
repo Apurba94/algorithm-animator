@@ -47,7 +47,8 @@ def build(algo, text, seed=1):
         if len({len(r) for r in grid}) != 1:
             raise ValueError("all grid rows must have the same length")
         return algo.run(grid), "\n".join("".join(r) for r in grid)
-    values = al.parse_numbers(text) if text else [random.Random(seed).randint(1, 40) for _ in range(12)]
+    rng = random.Random(seed)
+    values = al.parse_numbers(text) if text else [rng.randint(1, 40) for _ in range(12)]
     if not values:
         raise ValueError("enter some numbers")
     if len(values) > 200:

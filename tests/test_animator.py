@@ -123,6 +123,8 @@ class TestOthers(unittest.TestCase):
             A.build(algo, " ".join(["1"] * 300))
         with self.assertRaises(ValueError):
             A.build(al.BY_NAME["A* search"], "...\n..\n")
+        generated = A.build(algo, "", 7)[1].split()
+        self.assertGreater(len(set(generated)), 6)                       # generated input must actually vary
         rows = al.race([5, 2, 9, 1])
         self.assertEqual(len(rows), 7)
         self.assertEqual(len(al.race([5, -2])), 6)                       # counting sort needs non-negatives
